@@ -29,6 +29,21 @@ router.post('/login', async (req, res) => {
     }
 })
 
+// get account info (private)
+router.get('/my-info', Authorizer, async (req, res) => {
+    const id = req.id;
+    try {
+        let result = await services.retrieveAccountById(id);
+        if (result === null) {
+            res.status(401).json({"Message": "Account not found"});
+        } else {
+            res.status(200).json(result);
+        }
+    } catch(err) {
+        res.status(500).json({"Message": "Server error"});
+    }
+})
+
 // update account
 router.put('/', Authorizer, async (req, res) => {
     const id = req.id;
