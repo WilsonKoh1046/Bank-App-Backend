@@ -11,6 +11,7 @@ app.get('/', (req, res) => {
 })
 
 app.use('/api/v1/accounts', require("./routes/account"));
+app.use('/api/v1/transactions', require("./routes/transaction"));
 
 app.listen(port, () => {
     console.log(`Server running at port ${port}`);

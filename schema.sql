@@ -8,6 +8,6 @@ CREATE TABLE accounts
     username character varying(255) NOT NULL,
     password character varying(255) NOT NULL,
     email character varying(255) NOT NULL,
-    balance type money DEFAULT 0,
+    balance type numeric DEFAULT 0,
     PRIMARY KEY (id)
 );
