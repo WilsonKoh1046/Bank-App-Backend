@@ -21,4 +21,15 @@ router.put('/', Authorizer, async (req, res) => {
     }
 });
 
+router.put('/transfer', Authorizer, async (req, res) => {
+    const user_id = req.id;
+    const { target_email, amount } = req.body;
+    try {
+        let result = await services.transferFund(user_id, amount, target_email);
+        res.status(result.Status).json({"Message": result.Message});
+    } catch(err) {
+        res.status(500).json({"Message": "Server error"});
+    }
+})
+
 module.exports = router;
