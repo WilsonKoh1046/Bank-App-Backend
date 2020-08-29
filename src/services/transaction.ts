@@ -1,33 +1,24 @@
-const pool = require("../config/db");
+import DB from "../config/db";
+import Response from "../models/Response";
+import { BasicSQL } from "./basic";
 
-class Transaction {
+export class TransactionServices {
+    private basicSQL: BasicSQL;
     constructor() {
-        this._DB = pool;
+        this.basicSQL = new BasicSQL();
     }
 
-    async _getAccount(id) {
-        try {
-            let account =  await this._DB.query(
-                `select * from accounts 
-                where id = '${id}'`
-                );
-            return account;
-        } catch(err) {
-            console.log(err);
-        }
-    }
-
-    _checkIfSufficientFund(balance, amount) {
+    private checkIfSufficientFund = (balance: number, amount: number): boolean => {
         return balance >= amount;
     }
 
-    async deposit(id, amount) {
+    public deposit = async (id: string, amount: number): Promise<Response> => {
         try {
-            let account = await this._getAccount(id);
-            if (account.rows.length === 0) {
+            let account = await this.basicSQL.retrieveBy("id", id, "accounts");
+            if (account === undefined) {
                 return {"Status": 401, "Message": "Account not found"};
             }
-            let statement = await this._DB.query(
+            let statement = await DB.query(
                 `update accounts
                 set balance = balance + ${amount}
                 where id = '${id}'
@@ -42,16 +33,16 @@ class Transaction {
         }
     }
 
-    async withdraw(id, amount) {
+    public withdraw = async (id: string, amount: number): Promise<Response> => {
         try {
-            let account = await this._getAccount(id);
-            if (account.rows.length === 0) {
+            let account = await this.basicSQL.retrieveBy("id", id, "accounts");
+            if (account === undefined) {
                 return {"Status": 401, "Message": "Account not found"};
             }
-            if (!this._checkIfSufficientFund(account.rows[0].balance, amount)) {
+            if (!this.checkIfSufficientFund(account.balance, amount)) {
                 return {"Status": 403, "Message": "Insufficient fund"};
             }
-            let statement = await this._DB.query(
+            let statement = await DB.query(
                 `update accounts
                 set balance = balance - ${amount}
                 where id = '${id}'
@@ -66,31 +57,28 @@ class Transaction {
         }
     }
 
-    async transferFund(user_id, amount, target_email) {
+    public transferFund = async (user_id: string, amount: number, target_email: string): Promise<Response> => {
         try {
-            let sender_account = await this._getAccount(user_id);
+            let sender_account = await this.basicSQL.retrieveBy("id", user_id, "accounts");
 
-            let receiver_account = await this._DB.query(
-                `select * from accounts
-                where email = '${target_email}'`
-                );
+            let receiver_account = await this.basicSQL.retrieveBy("email", target_email, "accounts");
             
-            if (sender_account.rows.length === 0 || receiver_account.rows.length === 0) {
+            if (sender_account === undefined || receiver_account === undefined) {
                 return {"Status": 401, "Message": "Account(s) not found"};
             }
 
-            if (!this._checkIfSufficientFund(sender_account.rows[0].balance, amount)) {
+            if (!this.checkIfSufficientFund(sender_account.balance, amount)) {
                 return {"Status": 403, "Message": "Insufficient fund"};
             }
 
-            let sender = await this._DB.query(
+            let sender = await DB.query(
                 `update accounts
                 set balance = balance - ${amount}
                 where id = '${user_id}'
                 returning *`
                 );
 
-            let receiver = await this._DB.query(
+            let receiver = await DB.query(
                 `update accounts
                 set balance = balance + ${amount}
                 where email = '${target_email}'
@@ -99,12 +87,10 @@ class Transaction {
 
             return {
                 "Status": 201, 
-                "Message": `Successfully transfer $${amount} from account ${user_id} to account ${receiver.rows[0].id}`
+                "Message": `Successfully transfer $${amount} from account ${sender.rows[0].id} to account ${receiver.rows[0].id}`
             };
         } catch(err) {
             console.log(err);
         }
     }
 }
-
-module.exports = new Transaction();

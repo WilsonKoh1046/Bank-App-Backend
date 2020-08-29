@@ -1,24 +1,23 @@
-const express = require("express");
-const router = express.Router();
-const Authorizer = require("../middlewares/authorizer");
-const services = require("../services/account");
+import { Router, Request, Response } from "express";
+import Authorizer from "../middlewares/authorizer";
+import { AccountServices } from "../services/account";
+const accountServices = new AccountServices;
+const router = Router();
 
-// create account
-router.post('/', async (req, res) => {
+router.post('/', async (req: Request, res: Response) => {
     const { username, password, email } = req.body;
     try {
-        let account = await services.createAccount(username, password, email);
+        let account = await accountServices.createAccount({ username, password, email });
         res.status(account.Status).json({"Message": account.Message});
     } catch(err) {
         res.status(500).json({"Message": "Server error"});
     }
 });
 
-// login
-router.post('/login', async (req, res) => {
+router.post('/login', async (req: Request, res: Response) => {
     const { email, password } = req.body;
     try {
-        let result = await services.loginAccount(email, password);
+        let result = await accountServices.loginAccount(email, password);
         if (result.Status === 401 || result.Status === 501) {
             res.status(result.Status).json({"Message": result.Message});
         } else {
@@ -29,11 +28,10 @@ router.post('/login', async (req, res) => {
     }
 })
 
-// get account info (private)
-router.get('/my-info', Authorizer, async (req, res) => {
+router.get('/my-info', Authorizer, async (req: Request, res: Response) => {
     const id = req.id;
     try {
-        let result = await services.retrieveAccountById(id);
+        let result = await accountServices.retrieveAccountById(id);
         if (result === null) {
             res.status(401).json({"Message": "Account not found"});
         } else {
@@ -44,20 +42,15 @@ router.get('/my-info', Authorizer, async (req, res) => {
     }
 })
 
-// update account
-router.put('/', Authorizer, async (req, res) => {
+router.put('/', Authorizer, async (req: Request, res: Response) => {
     const id = req.id;
     const { username, password, email } = req.body;
     try {
-        let result = await services.updateAccount(id, username, password, email);
-        if (result.Status === 401) {
-            res.status(result.Status).json({"Message": result.Message});
-        } else {
-            res.status(result.Status).json({"Info": result.Info});
-        }
+        let result = await accountServices.updateAccount({ id, username, password, email} );
+        res.status(result.Status).json({"Message": result.Message});
     } catch(err) {
         res.status(500).json({"Message": "Server error"});
     }
 });
 
-module.exports = router;
+export default router;
