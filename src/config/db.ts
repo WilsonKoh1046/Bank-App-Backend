@@ -1,16 +1,12 @@
-import { Pool } from "pg";
+import { Sequelize } from "sequelize";
 import { 
     dbUser,
     dbHost,
     dbDatabase,
-    dbPassword,
-    dbPort
+    dbPassword
  } from "./configuration";
 
-export default new Pool({
-    user: dbUser,
+export default new Sequelize(dbDatabase, dbUser, dbPassword, {
     host: dbHost,
-    database: dbDatabase,
-    password: dbPassword,
-    port: dbPort
+    dialect: "postgres"
 })

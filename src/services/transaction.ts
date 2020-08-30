@@ -1,12 +1,8 @@
-import DB from "../config/db";
 import Response from "../models/Response";
-import { BasicSQL } from "./basic";
+import Account from "../dbModels/Account";
 
 export class TransactionServices {
-    private basicSQL: BasicSQL;
-    constructor() {
-        this.basicSQL = new BasicSQL();
-    }
+    constructor() {};
 
     private checkIfSufficientFund = (balance: number, amount: number): boolean => {
         return balance >= amount;
@@ -14,19 +10,24 @@ export class TransactionServices {
 
     public deposit = async (id: string, amount: number): Promise<Response> => {
         try {
-            let account = await this.basicSQL.retrieveBy("id", id, "accounts");
-            if (account === undefined) {
+            let account = await Account.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (account === null) {
                 return {"Status": 401, "Message": "Account not found"};
             }
-            let statement = await DB.query(
-                `update accounts
-                set balance = balance + ${amount}
-                where id = '${id}'
-                returning *`
-                );
+
+            await Account.increment("balance", {
+                by: amount,
+                where: {
+                    id: id
+                }
+            })
             return {
                 "Status": 201,
-                "Message": `Successfully deposited $${amount} to account of id ${id}, current balance: $${statement.rows[0].balance}`
+                "Message": `Successfully deposited $${amount} to account of id ${id}`
             }
         } catch(err) {
             console.log(err);
@@ -35,22 +36,26 @@ export class TransactionServices {
 
     public withdraw = async (id: string, amount: number): Promise<Response> => {
         try {
-            let account = await this.basicSQL.retrieveBy("id", id, "accounts");
-            if (account === undefined) {
+            let account = await Account.findOne({
+                where: {
+                    id: id
+                }
+            });
+            if (account === null) {
                 return {"Status": 401, "Message": "Account not found"};
             }
             if (!this.checkIfSufficientFund(account.balance, amount)) {
                 return {"Status": 403, "Message": "Insufficient fund"};
             }
-            let statement = await DB.query(
-                `update accounts
-                set balance = balance - ${amount}
-                where id = '${id}'
-                returning *`
-                );
+            await Account.increment("balance", {
+                by: -amount,
+                where: {
+                    id: id
+                }
+            })
             return {
                 "Status": 201, 
-                "Message": `Successfully withdrawn $${amount} from account of id ${id}, current balance: $${statement.rows[0].balance}`
+                "Message": `Successfully withdrawn $${amount} from account of id ${id}`
             };
         } catch(err) {
             console.log(err);
@@ -59,11 +64,19 @@ export class TransactionServices {
 
     public transferFund = async (user_id: string, amount: number, target_email: string): Promise<Response> => {
         try {
-            let sender_account = await this.basicSQL.retrieveBy("id", user_id, "accounts");
+            let sender_account = await Account.findOne({
+                where: {
+                    id: user_id
+                }
+            });
 
-            let receiver_account = await this.basicSQL.retrieveBy("email", target_email, "accounts");
+            let receiver_account = await Account.findOne({
+                where: {
+                    email: target_email
+                }
+            });
             
-            if (sender_account === undefined || receiver_account === undefined) {
+            if (sender_account === null || receiver_account === null) {
                 return {"Status": 401, "Message": "Account(s) not found"};
             }
 
@@ -71,23 +84,22 @@ export class TransactionServices {
                 return {"Status": 403, "Message": "Insufficient fund"};
             }
 
-            let sender = await DB.query(
-                `update accounts
-                set balance = balance - ${amount}
-                where id = '${user_id}'
-                returning *`
-                );
+            await Account.increment("balance", {
+                by: -amount,
+                where: {
+                    id: user_id
+                }
+            });
 
-            let receiver = await DB.query(
-                `update accounts
-                set balance = balance + ${amount}
-                where email = '${target_email}'
-                returning *`
-                );
-
+            await Account.increment("balance", {
+                by: amount,
+                where: {
+                    email: target_email
+                }
+            });
             return {
                 "Status": 201, 
-                "Message": `Successfully transfer $${amount} from account ${sender.rows[0].id} to account ${receiver.rows[0].id}`
+                "Message": `Successfully transfer $${amount} from account ${user_id} to account ${receiver_account.id}`
             };
         } catch(err) {
             console.log(err);
