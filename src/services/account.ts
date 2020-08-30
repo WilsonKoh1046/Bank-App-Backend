@@ -17,7 +17,7 @@ export class AccountServices {
             });
             
             if (checkAccount !== null) {
-                return {"Status": 501, "Message": "Email not available"};
+                return {"Status": 403, "Message": "Email not available"};
             }
             let hashedPassword = await passwordHasher(accDetails.password);
     
@@ -41,11 +41,11 @@ export class AccountServices {
                 }
             });
             if (account === null) {
-                return {"Status": 401, "Message": "Account not found"};
+                return {"Status": 404, "Message": "Account not found"};
             }
             let checkPassword = await passwordChecker(password, account.password);
             if (!checkPassword) {
-                return {"Status": 501, "Message": "Invalid password"};
+                return {"Status": 503, "Message": "Invalid password"};
             }
             let token = await jwtGenerator(account.id);
             return {"Status": 200, "Token": token};
@@ -82,7 +82,7 @@ export class AccountServices {
         try {
             let account = await this.retrieveAccountById(accDetails.id);
             if (account === null) {
-                return {"Status": 401, "Message": "Account not found"};
+                return {"Status": 404, "Message": "Account not found"};
             }
             let hashedPassword = await passwordHasher(accDetails.password);
             await Account.update({
@@ -105,7 +105,7 @@ export class AccountServices {
         try {
             let account = await this.retrieveAccountById(id);
             if (account === null) {
-                return {"Status": 401, "Message": "Account not found"};
+                return {"Status": 404, "Message": "Account not found"};
             }
             await Account.destroy({
                 where: {

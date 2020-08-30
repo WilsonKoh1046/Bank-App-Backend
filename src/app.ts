@@ -1,5 +1,6 @@
 import express from "express";
 import * as bodyParser from "body-parser";
+import cors from "cors";
 import accountRoute from "./routes/account";
 import transactionRoute from "./routes/transaction";
 
@@ -8,6 +9,8 @@ const port = 5000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
+
+app.use(cors());
 
 app.get("/", (req, res) => {
     res.send("Server is alive \n");

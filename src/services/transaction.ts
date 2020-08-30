@@ -16,7 +16,7 @@ export class TransactionServices {
                 }
             });
             if (account === null) {
-                return {"Status": 401, "Message": "Account not found"};
+                return {"Status": 404, "Message": "Account not found"};
             }
 
             await Account.increment("balance", {
@@ -42,7 +42,7 @@ export class TransactionServices {
                 }
             });
             if (account === null) {
-                return {"Status": 401, "Message": "Account not found"};
+                return {"Status": 404, "Message": "Account not found"};
             }
             if (!this.checkIfSufficientFund(account.balance, amount)) {
                 return {"Status": 403, "Message": "Insufficient fund"};
@@ -77,7 +77,7 @@ export class TransactionServices {
             });
             
             if (sender_account === null || receiver_account === null) {
-                return {"Status": 401, "Message": "Account(s) not found"};
+                return {"Status": 404, "Message": "Account(s) not found"};
             }
 
             if (!this.checkIfSufficientFund(sender_account.balance, amount)) {
