@@ -28,6 +28,15 @@ router.post('/login', async (req: Request, res: Response) => {
     }
 })
 
+router.get('/', async (req: Request, res: Response) => {
+    try {
+        let result = await accountServices.retrieveAccounts();
+        res.status(200).json(result);
+    } catch(err) {
+        res.status(500).json({"Message": "Server error"});
+    }
+})
+
 router.get('/my-info', Authorizer, async (req: Request, res: Response) => {
     const id = req.id;
     try {
